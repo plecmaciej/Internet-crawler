@@ -10,6 +10,7 @@ import urllib3
 from queue import Queue
 import networkx as nx
 
+
 BASE = "https://stanford.edu/"
 DOMAIN = "stanford.edu"
 USER_AGENT = "UniversityBot/1.0 (+https://pg.edu.pl/)"
@@ -244,8 +245,8 @@ print("=" * 70)
 results = {}
 
 #for num_threads in [1, 2, 4, 8, 16]:
-for num_threads in [16, 16]:
-    result = crawl_with_threads(num_threads, max_pages=500)
+for num_threads in [16, 32]:
+    result = crawl_with_threads(num_threads, max_pages=100)
     results[num_threads] = result
 
     print(f"{num_threads:<8} {result['time']:<10.2f} {result['crawled']:<8} "
@@ -273,3 +274,39 @@ G_final = results[max(results.keys())]['graph']
 print(f"\nGraph: {G_final.number_of_nodes()} nodes, {G_final.number_of_edges()} edges")
 nx.write_edgelist(G_final, "graph.txt")
 print("Graf zapisany do graph.txt")
+
+
+import json
+import time
+
+
+print("\n" + "="*70)
+print("Saving results")
+print("="*70 + "\n")
+
+
+results_data = {
+    'timestamp': str(time.time()),
+    'domain': DOMAIN,
+    'max_pages': max([r['crawled'] for r in results.values()]),
+    'results': {},
+    'graph_info': {
+        'nodes': G_final.number_of_nodes(),
+        'edges': G_final.number_of_edges()
+    }
+}
+
+
+for num_threads, result in results.items():
+    results_data['results'][str(num_threads)] = {
+        'threads': result['threads'],
+        'time': result['time'],
+        'crawled': result['crawled'],
+        'throughput': result['throughput']
+    }
+
+with open('results.json', 'w') as f:
+    json.dump(results_data, f, indent=2)
+
+print("Results saved to results.json")
+print("\n" + "="*70 + "\n")
