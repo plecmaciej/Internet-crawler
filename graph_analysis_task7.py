@@ -48,12 +48,15 @@ plt.title("Rozkład lokalnego współczynnika klasteryzacji")
 plt.savefig("hist_clustering.png")
 
 # --- C(k) vs k ---
+# Calculating in degree_to_C how many degrees with unique value there is
 degree_to_C = defaultdict(list)
 for v in G.nodes:
     degree_to_C[k_v_dict[v]].append(C_v[v])
 
+# C_k - mean c_k for vertices with ceratin degree
 C_k = {k: np.mean(vals) for k, vals in degree_to_C.items()}
 
+# sorting values for k and c
 ks = np.array(sorted(C_k.keys()))
 Cs = np.array([C_k[k] for k in ks])
 
@@ -62,6 +65,7 @@ mask = (ks > 0) & (Cs > 0)
 log_k = np.log(ks[mask])
 log_C = np.log(Cs[mask])
 
+# np.polyfit(x, y, 1) dopasowuje prostą stopnia 1 (y = slope*x + intercept)
 slope, intercept = np.polyfit(log_k, log_C, 1)
 print(f"Wykładnik regresji: {slope:.3f} (oczekiwane w okolicach -1)")
 
