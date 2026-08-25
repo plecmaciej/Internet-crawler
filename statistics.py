@@ -1,27 +1,26 @@
 import json
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
 
+OUTPUT_DIR = "graph_analysis_task2"
+
 # === LOAD RESULTS ===
-print("📂 Loading results from results.json...\n")
+print("📂 Loading results from {OUTPUT_DIR}results.json...\n")
+json_path = os.path.join(OUTPUT_DIR, 'results.json')
 
 try:
-    with open('results.json', 'r') as f:
+    with open(json_path, 'r') as f:
         results_data = json.load(f)
 except FileNotFoundError:
-    print("❌ results.json not found!")
+    print("❌ {json_path} not found!")
     print("   Run first: python crawler.py")
     exit(1)
 
-# Unpack data
-domain = results_data['domain']
-graph_nodes = results_data['graph_info']['nodes']
-graph_edges = results_data['graph_info']['edges']
-
-# Convert result keys to numbers
+# Convert result keys to numbers (Uproszczone: czyta od razu główny słownik)
 results = {}
-for threads_str, result in results_data['results'].items():
+for threads_str, result in results_data.items():
     threads = int(threads_str)
     results[threads] = result
 
@@ -34,9 +33,9 @@ baseline_time = results[min(threads_list)]['time']
 speedups = [baseline_time / results[t]['time'] for t in threads_list]
 ideal_speedup = threads_list.copy()
 
-# === FIGURE WITH 4 CHARTS ===
+# === FIGURE WITH 4 CHARTS (BEZ ZMIAN W WYGLĄDZIE) ===
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 11))
-fig.suptitle(f'Crawling performance analysis {domain} - thread count comparison',
+fig.suptitle('Crawling performance analysis - thread count comparison',
              fontsize=16, fontweight='bold', y=0.995)
 
 # --- CHART 1: Time vs Threads ---
@@ -120,21 +119,14 @@ for i in range(1, len(table_data)):
 ax4.set_title('4. Results table', fontsize=12, fontweight='bold', pad=20)
 
 plt.tight_layout()
-plt.savefig('performance_analysis.png', dpi=300, bbox_inches='tight')
-print("✅ Chart saved: performance_analysis.png\n")
+png_path = os.path.join(OUTPUT_DIR, 'performance_analysis.png')
+plt.savefig(png_path, dpi=300, bbox_inches='tight')
+print(f"✅ Chart saved: {png_path}\n")
 
-try:
-    plt.show()
-except:
-    print("⚠️ Cannot display chart (no GUI)")
-
-# === STATISTICS ===
+# === STATISTICS (POPRAWIONA LOGIKA MIN/MAX) ===
 print("=" * 70)
 print("📈 PERFORMANCE STATISTICS")
 print("=" * 70)
-
-print(f"\n🌐 Domain: {domain}")
-print(f"📊 Graph: {graph_nodes} nodes, {graph_edges} edges")
 
 print("\n⚡ Parallelization efficiency:")
 for t in threads_list:
@@ -143,32 +135,34 @@ for t in threads_list:
     status = "✅" if efficiency > 50 else "⚠️" if efficiency > 30 else "❌"
     print(f"  {status} {t:2d} threads: {speedup:5.2f}x speedup, {efficiency:5.1f}% efficiency")
 
-fastest_threads = max(threads_list, key=lambda t: results[t]['throughput'])
+# POPRAWKA: Najszybszy to ten z najkrótszym czasem
+fastest_threads = min(threads_list, key=lambda t: results[t]['time'])
 fastest_result = results[fastest_threads]
 print(f"\n🚀 Fastest: {fastest_threads} threads")
 print(f"   Time: {fastest_result['time']:.2f}s")
 print(f"   Throughput: {fastest_result['throughput']:.2f} pg/s")
 
-slowest_threads = min(threads_list)
+# POPRAWKA: Najwolniejszy to ten z najdłuższym czasem
+slowest_threads = max(threads_list, key=lambda t: results[t]['time'])
 slowest_result = results[slowest_threads]
 print(f"\n🐢 Slowest: {slowest_threads} thread")
 print(f"   Time: {slowest_result['time']:.2f}s")
 print(f"   Throughput: {slowest_result['throughput']:.2f} pg/s")
 
+# POPRAWKA: Zabezpieczenie poprawnego liczenia zysku z czasu
 improvement = (slowest_result['time'] - fastest_result['time']) / slowest_result['time'] * 100
 print(f"\n📈 Time improvement: {improvement:.1f}%")
 
 print("\n" + "=" * 70 + "\n")
 
 # === SAVE STATISTICS TO FILE ===
-with open('statistics.txt', 'w', encoding='utf-8') as f:
+txt_path = os.path.join(OUTPUT_DIR, 'statistics.txt')
+with open(txt_path, 'w', encoding='utf-8') as f:
     f.write("=" * 70 + "\n")
     f.write("📊 CRAWLING PERFORMANCE REPORT\n")
     f.write("=" * 70 + "\n\n")
 
-    f.write(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-    f.write(f"Domain: {domain}\n")
-    f.write(f"Graph: {graph_nodes} nodes, {graph_edges} edges\n\n")
+    f.write(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
 
     f.write("TEST RESULTS:\n")
     f.write("-" * 70 + "\n")
@@ -186,9 +180,9 @@ with open('statistics.txt', 'w', encoding='utf-8') as f:
     f.write("SUMMARY:\n")
     f.write("=" * 70 + "\n\n")
 
-    f.write(f"Fastest: {fastest_threads} threads ({fastest_result['throughput']:.2f} pg/s)\n")
-    f.write(f"Slowest: {slowest_threads} thread ({slowest_result['throughput']:.2f} pg/s)\n")
-    f.write(f"Speedup: {speedups[-1]:.2f}x (1 vs {threads_list[-1]} threads)\n")
-    f.write(f"Time improvement: {improvement:.1f}%\n")
+    f.write(f"Fastest: {fastest_threads} threads ({fastest_result['time']:.2f}s, {fastest_result['throughput']:.2f} pg/s)\n")
+    f.write(f"Slowest: {slowest_threads} threads ({slowest_result['time']:.2f}s, {slowest_result['throughput']:.2f} pg/s)\n")
+    f.write(f"Speedup vs 1 thread: {speedups[-1]:.2f}x (1 vs {threads_list[-1]} threads)\n")
+    f.write(f"Time improvement (Slowest vs Fastest): {improvement:.1f}%\n")
 
-print("✅ Statistics saved: statistics.txt")
+print(f"✅ Statistics saved: {txt_path}")

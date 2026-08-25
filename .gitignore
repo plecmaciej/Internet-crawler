@@ -1,4 +1,6 @@
 .venv/
 .idea/
+graph_analysis_task2
 graph.txt
 condensation.txt
+graph_cleaned.txt

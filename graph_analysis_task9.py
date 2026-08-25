@@ -134,3 +134,4 @@ comparison_plot("largest_wcc", "rozmiar największej WCC", "Największa WCC vs f
 comparison_plot("largest_scc", "rozmiar największej SCC", "Największa SCC vs frakcja usunięć", "robustness_scc.png")
 comparison_plot("avg_distance", "średnia odległość", "Średnia odległość vs frakcja usunięć", "robustness_avg_dist.png")
 comparison_plot("diameter", "średnica", "Średnica vs frakcja usunięć", "robustness_diameter.png")
+
