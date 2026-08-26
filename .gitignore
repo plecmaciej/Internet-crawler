@@ -2,8 +2,8 @@
 .idea/
 graph_analysis_task2
 graph_analysis_task3
+graph_analysis_task4
 graph.txt
-condensation.txt
 graph_fixed.txt
 graph_backup.txt
 fix_graph.py

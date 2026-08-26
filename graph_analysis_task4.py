@@ -2,6 +2,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 from collections import deque
+import os
 
 
 def my_tarjan(G):
@@ -100,12 +101,13 @@ def bfs_backward(G, sources):
 
 
 def main():
+    os.makedirs("graph_analysis_task4", exist_ok=True)
     print("=" * 70)
     print("ANALIZA GRAFU Z PLIKU graph.txt")
     print("=" * 70 + "\n")
 
     G = nx.read_edgelist(
-        "graph.txt",
+        "graph_fixed.txt",
         create_using=nx.DiGraph()
     )
 
@@ -349,7 +351,7 @@ def main():
 
     plt.tight_layout()
     plt.savefig(
-        "scc_size_distribution.png",
+        "graph_analysis_task4/scc_size_distribution.png",
         dpi=300,
         bbox_inches='tight'
     )
@@ -409,7 +411,7 @@ def main():
 
     nx.write_edgelist(
         condensation,
-        "condensation.txt"
+        "graph_analysis_task4/condensation.txt"
     )
 
     print(
