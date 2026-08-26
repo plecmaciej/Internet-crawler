@@ -4,6 +4,7 @@ import json
 import threading
 from queue import Queue, Empty
 from urllib.robotparser import RobotFileParser
+import re
 from urllib.parse import urlparse, urljoin, urlunparse
 import requests
 from bs4 import BeautifulSoup
@@ -34,11 +35,14 @@ def normalize_url(url):
     - Strips 'www.' prefix from netloc.
     - Removes trailing slashes and url fragments (#anchor).
     - Preserves query parameters (?key=value) required for dynamic content.
+    - Removes all hidden whitespaces (spaces, newlines, tabs).
     """
     if not url:
         return ""
 
     url = str(url).strip()
+
+    url = re.sub(r'\s+', '%20', url)
 
     # Handle protocol-relative URLs or absolute paths
     if url.startswith("//"):
@@ -64,7 +68,7 @@ def normalize_url(url):
         netloc,
         path,
         parsed.params,
-        parsed.query,  # Keeps dynamic parameters (e.g. ?tid=All&tid_1=251)
+        parsed.query,  # Keeps dynamic parameters
         ""  # Strip fragment identifier (#)
     ))
 
@@ -320,13 +324,14 @@ def run_full_domain_crawl(optimal_threads=32, max_pages=10000):
 
     validate_graph(full_res['graph'])
 
-    nx.write_edgelist(full_res['graph'], "graph_cleaned.txt")
-    print("💾 Validated graph saved to graph_cleaned.txt")
+    nx.write_edgelist(full_res['graph'], "graph.txt", delimiter='\t', data=False)
+    print("💾 Validated graph saved to graph.txt")
 
     return full_res
 
 
 if __name__ == "__main__":
+    """
     # Stage 1: Run multithreading benchmark comparison (e.g. 500 or 3000 pages sample)
     benchmark_results = run_benchmarks(thread_variants=[1, 2, 4, 8, 16, 32], sample_pages=1000)
 
@@ -352,7 +357,9 @@ if __name__ == "__main__":
 
     print("✅ Pomyślnie zapisano plik 'results.json'.")
     print("👉 Możesz teraz uruchomić skrypt generujący statystyki!")
+    
+    """
 
     # Stage 2: Execute full crawl with optimal thread setting (limit up to 10000 pages)
-    #full_crawl_results = run_full_domain_crawl(optimal_threads=32, max_pages=200)
+    full_crawl_results = run_full_domain_crawl(optimal_threads=32, max_pages=15000)
 

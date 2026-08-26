@@ -20,7 +20,7 @@ def my_tarjan(G):
         lowlink[start] = counter
         counter += 1
         S.append(start)
-        on_stack.add(start)
+        on_stack.add(start) # on stack gives quick information about Stack S
 
         call_stack = [(start, iter(G.successors(start)))]
 

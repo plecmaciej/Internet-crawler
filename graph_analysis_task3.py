@@ -1,9 +1,10 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 # DiGraph - directed graph
-G = nx.read_edgelist("graph.txt", create_using=nx.DiGraph())
+G = nx.read_edgelist("graph_fixed.txt", create_using=nx.DiGraph())
 
 print("|E| = ", G.number_of_edges())
 print("|V| = ", G.number_of_nodes())
@@ -51,5 +52,30 @@ axes[1, 1].set_xlabel("Out-degree")
 axes[1, 1].set_ylabel("Number of nodes")
 
 plt.tight_layout()
-plt.savefig("degree_histograms.png", dpi=300, bbox_inches='tight')
+os.makedirs("graph_analysis_task3", exist_ok=True)
+plt.savefig(
+    "graph_analysis_task3/degree_histograms.png",
+    dpi=300,
+    bbox_inches="tight"
+)
 plt.show()
+
+
+print("\n" + "=" * 40)
+print("Additional analysis")
+print("=" * 40)
+
+max_in = max(in_values)
+max_out = max(out_values)
+in_0 = sum(1 for v in in_values if v == 0)
+out_0 = sum(1 for v in out_values if v == 0)
+in_1 = sum(1 for v in in_values if v == 1)
+out_1 = sum(1 for v in out_values if v == 1)
+
+print(f"Liczba wierzchołków z in-degree = 0:  {in_0}  (Tzw. źródła - nikt do nich nie linkuje)")
+print(f"Liczba wierzchołków z out-degree = 0: {out_0}  (Tzw. ujścia/ślepe zaułki - nie linkują nigdzie)")
+print(f"Liczba wierzchołków z in-degree = 1:  {in_1}")
+print(f"Liczba wierzchołków z out-degree = 1: {out_1}")
+print(f"Max z in-degree: {max_in}")
+print(f"Max z out-degree: {max_out}")
+print("=" * 40 + "\n")
