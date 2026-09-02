@@ -107,7 +107,7 @@ def main():
     print("=" * 70 + "\n")
 
     G = nx.read_edgelist(
-        "graph_fixed.txt",
+        "graph.txt",
         create_using=nx.DiGraph()
     )
 

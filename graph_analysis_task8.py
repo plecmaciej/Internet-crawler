@@ -1,6 +1,9 @@
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+
+os.makedirs("graph_analysis_task8", exist_ok=True)
 
 G = nx.read_edgelist("graph.txt", create_using=nx.DiGraph())
 
@@ -11,7 +14,7 @@ L = {v: G.out_degree(v) for v in nodes}
 dangling = [v for v in nodes if L[v] == 0]
 
 epsilon = 1e-6
-max_iter = 1000
+max_iter = 1500
 
 
 def pagerank(d, epsilon=epsilon, max_iter=max_iter):
@@ -52,7 +55,7 @@ results = {}
 for d in d_values:
     PR, converged, n_iter = pagerank(d)
     results[d] = {"PR": PR, "converged": converged, "n_iter": n_iter}
-    print(f"d={d}: zbieżność po {n_iter} iteracjach (L1), L1@{converged['L1']} L2@{converged['L2']} Linf@{converged['Linf']}")
+    print(f"d={d}: zbieżność po {n_iter} iteracjach (L1), L1={converged['L1']} L2={converged['L2']} Linf={converged['Linf']}")
 
 
 plt.figure()
@@ -63,7 +66,11 @@ plt.xlabel("d")
 plt.ylabel("liczba iteracji do zbieżności")
 plt.title("Iteracje do zbieżności vs d")
 plt.legend()
-plt.savefig("pagerank_convergence_vs_d.png")
+plt.savefig(
+    "graph_analysis_task8/pagerank_convergence_vs_d.png",
+    dpi=300,
+    bbox_inches="tight"
+)
 
 
 # --- Rozkład PR na log-log, dla d=0.85 ---
@@ -75,7 +82,11 @@ plt.scatter(np.log(np.arange(1, len(pr_values) + 1)), np.log(pr_values), s=8)
 plt.xlabel("log(ranga)")
 plt.ylabel("log(PR)")
 plt.title("Rozkład wartości PageRank (d=0.85), log-log")
-plt.savefig("pagerank_distribution_loglog.png")
+plt.savefig(
+    "graph_analysis_task8/pagerank_distribution_loglog.png",
+    dpi=300,
+    bbox_inches="tight"
+)
 
 
 # --- Top-20 pages 
@@ -85,4 +96,4 @@ for rank, (page, pr) in enumerate(top20, 1):
     print(f"{rank}. {page} — PR={pr:.6f}")
 
 
-print(sum(results[0.85]["PR"].values()))
+print("Suma PR wynosi: ",sum(results[0.85]["PR"].values()))

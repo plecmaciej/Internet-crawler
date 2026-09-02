@@ -2,7 +2,7 @@ import networkx as nx
 import numpy as np
 from collections import Counter
 
-G = nx.read_edgelist("graph_fixed.txt", create_using=nx.DiGraph())
+G = nx.read_edgelist("graph.txt", create_using=nx.DiGraph())
 
 in_degree = dict(G.in_degree())
 out_degree = dict(G.out_degree())

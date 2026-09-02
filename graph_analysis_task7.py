@@ -2,6 +2,9 @@ import networkx as nx
 import numpy as np
 from collections import defaultdict
 import matplotlib.pyplot as plt
+import os
+
+os.makedirs("graph_analysis_task7", exist_ok=True)
 
 G = nx.read_edgelist("graph.txt", create_using=nx.DiGraph())
 
@@ -45,7 +48,11 @@ plt.hist(list(C_v.values()), bins=30)
 plt.xlabel("C(v)")
 plt.ylabel("liczba wierzchołków")
 plt.title("Rozkład lokalnego współczynnika klasteryzacji")
-plt.savefig("hist_clustering.png")
+plt.savefig(
+    "graph_analysis_task7/hist_clustering.png",
+    dpi=300,
+    bbox_inches="tight"
+)
 
 # --- C(k) vs k ---
 # Calculating in degree_to_C how many degrees with unique value there is
@@ -76,4 +83,8 @@ plt.xlabel("log(k)")
 plt.ylabel("log(C(k))")
 plt.title("C(k) vs k (log-log)")
 plt.legend()
-plt.savefig("clustering_vs_degree.png")
+plt.savefig(
+    "graph_analysis_task7/clustering_vs_degree.png",
+    dpi=300,
+    bbox_inches="tight"
+)

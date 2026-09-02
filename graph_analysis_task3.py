@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 # DiGraph - directed graph
-G = nx.read_edgelist("graph_fixed.txt", create_using=nx.DiGraph())
+G = nx.read_edgelist("graph.txt", create_using=nx.DiGraph())
 
 print("|E| = ", G.number_of_edges())
 print("|V| = ", G.number_of_nodes())

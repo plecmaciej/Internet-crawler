@@ -463,6 +463,15 @@ crawler.py (800+ wierszy)
 
 ---
 
+**Propozycje AI i decyzje:**
+
+| Propozycja AI | Decyzja | Uzasadnienie |
+|---|---|---|
+| Wspólny moduł `graph_utils.py` z funkcjami z Z3-Z5 | Przyjęto | Eliminacja duplikacji kodu (wczytanie grafu, Tarjan, BFS, OLS/MLE/K-S) powtarzającego się w osobnych plikach zadań; ułatwia też pisanie ewentualnych testów regresyjnych |
+| Eksport grafu do formatu GraphML z kolorowaniem wg struktury bow-tie | Przyjęto | Wizualne uzupełnienie analizy liczbowej z Z4 — pozwala zobaczyć strukturę SCC/IN/OUT/TENDRILS w Gephi zamiast tylko czytać liczby |
+| Szczegółowa analiza mniejszej składowej WCC (8 węzłów) | Przyjęto | Bezpośrednia weryfikacja hipotezy postawionej w Z4 o przyczynie WCC=2 (artefakt normalizacji URL vs realnie odcięty fragment strony) |
+| — | *(pozostałe propozycje: podział na moduły dla crawlera, testy jednostkowe, betweenness/closeness centrality — w rozważeniu, decyzja niepodjęta)* | |
+
 ### Propozycje - Odrzucone
 
 **1. Podział na moduły**

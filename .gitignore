@@ -3,7 +3,13 @@
 graph_analysis_task2
 graph_analysis_task3
 graph_analysis_task4
+graph_analysis_task5
+graph_analysis_task6
+graph_analysis_task7
+graph_analysis_task8
+graph_analysis_task9
 graph.txt
 graph_fixed.txt
 graph_backup.txt
+graph_export.graphml
 fix_graph.py
