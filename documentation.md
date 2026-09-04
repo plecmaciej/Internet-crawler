@@ -97,8 +97,7 @@ if not rp.can_fetch(user_agent, current_url):
 |---------|---------------------------------------------------------------------------------------------------------------|
 | Normalizacja URL-ów - czemu? | Duplikaty: `www.stanford.edu` i `stanford.edu` to ta sama strona. Wynik: 1200 URL-ów → 847 URL-ów             |
 | HEAD request - czym? | HTTP życzenie pobiera TYLKO nagłówki (bez body). Stanford czasem je blokuje.                                  |
-| Zawisy wątków - rozwiązanie? | `.get(timeout=0.5)` czeka max 0.5s, potem wątek może się zakończyć. Bez timeout queue czeka w nieskończoność. |
-| Amdahl's Law | S = 1 / (p + (1-p)/N). Dla mojego kodu: p ≈ 0.02 (2% sekwencyjne) → świetne skalowanie!                       |
+| Zawisy wątków - rozwiązanie? | `.get(timeout=0.5)` czeka max 0.5s, potem wątek może się zakończyć. Bez timeout queue czeka w nieskończoność. |                    |
 
 ---
 
@@ -122,7 +121,7 @@ if not rp.can_fetch(user_agent, current_url):
 | HEAD request do sprawdzenia 404 | Nie | Duplikuje requesty, Stanford blokuje HEAD |
 | SSLAdapter do obsługi weak SSL | Nie | Bardziej uniwersalnym jest `verify=False` |
 | Lokalny `seen_urls` per-thread | Nie | Powoduje duplikaty w `url_frontier` |
-| `raise_for_status()` | Nie | Uniemożliwia obsługę 404-ów w grafie |
+
 
 ---
 
@@ -172,9 +171,6 @@ Threads    Time (s)    Pages   Throughput    Speedup    Efficiency
 - Throughput: 1 wątek = 0.20 st/s, 32 wątkami = 6.97 st/s
 - Efficiency spada po 32 wątkach (bottleneck w connection pool/DNS)
 - Anomalia >100% dla 2-8 wątków to superlinear speedup (cache effects)
-
-**Czy pasuje do teorii?**
-- TAK — Amdahl's Law potwierdzony empirycznie
 - Speedup prawie liniowy do 16 wątków (świetne skalowanie)
 
 ---
@@ -236,25 +232,27 @@ Threads    Time (s)    Pages   Throughput    Speedup    Efficiency
 
 ```
 |E| =  527145
-|V| =  15009
-Density =  0.0023402136756325736
-Average in-degree =  35.12192684389366
-Average out-degree =  35.12192684389366
+|V| =  15001
+Density =  0.002342710485967602
+Average in-degree =  35.14065728951403
+Average out-degree =  35.14065728951403
 
 Analiza wierzchołków skrajnych:
-Liczba wierzchołków z in-degree = 0:   1     (źródła — nikt do nich nie linkuje)
-Liczba wierzchołków z out-degree = 0:  1057  (ujścia/ślepe zaułki — nie linkują nigdzie)
-Liczba wierzchołków z in-degree = 1:   5198
-Liczba wierzchołków z out-degree = 1:  164
-Max in-degree:  13804
-Max out-degree: 342
+Liczba wierzchołków z in-degree = 0:  0  (Tzw. źródła - nikt do nich nie linkuje)
+Liczba wierzchołków z out-degree = 0: 1049  (Tzw. ujścia/ślepe zaułki - nie linkują nigdzie)
+Liczba wierzchołków z in-degree = 1:  5191
+Liczba wierzchołków z out-degree = 1: 164
+Max z in-degree: 13805
+Max z out-degree: 342
 ```
 
+![alt text](degree_histograms.png)
+
 **Czy wyniki pasują do teorii?**
-- Gęstość rzędu 0.0023 jest typowa dla grafów WWW — sieć hiperłączy jest z natury bardzo rzadka (żadna strona nie linkuje do znacznej części pozostałych).
-- Rozkład jest silnie asymetryczny między in-degree a out-degree mimo równej średniej: max in-degree = 13804 (praktycznie cały graf), podczas gdy max out-degree = 342. To sygnalizuje istnienie dominującego węzła-huba (prawdopodobnie strona główna lub globalne menu nawigacyjne), do którego linkuje niemal każda podstrona — zjawisko typowe dla stron uczelnianych z powtarzalnym szablonem HTML (nagłówek/stopka).
-- Duża liczba ujść (1057 węzłów z out-degree=0) odpowiada podstronom "liściom" — dokumentom, plikom PDF, zewnętrznym zasobom itp., które nie mają dalszych linków wewnątrz domeny.
-- Tylko 1 źródło (in-degree=0) sugeruje, że niemal do każdej odkrytej strony da się dotrzeć z powrotem przez linki — spójne z wynikami Z4 (bardzo duże SCC).
+- Gęstość rzędu 0.0023 jest typowa dla grafów WWW - sieć hiperłączy jest z natury bardzo rzadka (żadna strona nie linkuje do znacznej części pozostałych).
+- Rozkład jest silnie asymetryczny między in-degree a out-degree mimo równej średniej: max in-degree = 13804 (praktycznie cały graf), podczas gdy max out-degree = 342. To sygnalizuje istnienie dominującego węzła-huba (prawdopodobnie strona główna lub globalne menu nawigacyjne), do którego linkuje niemal każda podstrona - zjawisko typowe dla stron uczelnianych z powtarzalnym szablonem HTML (nagłówek/stopka).
+- Duża liczba ujść (1057 węzłów z out-degree=0) odpowiada podstronom "liściom" - dokumentom, plikom PDF, zewnętrznym zasobom itp., które nie mają dalszych linków wewnątrz domeny.
+
 
 ---
 
@@ -295,7 +293,7 @@ Max out-degree: 342
 
 | Propozycja | Przyjęto | Przyczyna |
 |---|---|---|
-| Sanity check `SCC+IN+OUT+TENDRILS+DISCONNECTED == |V|` | Tak | Prosty, ale skuteczny test poprawności całej klasyfikacji |
+| Sanity check `SCC+IN+OUT+TENDRILS+DISCONNECTED == moc V` | Tak | Prosty, ale skuteczny test poprawności całej klasyfikacji |
 | Weryfikacja Tarjana przez porównanie z `nx.strongly_connected_components` na małych przykładach przed odpaleniem na pełnym grafie | Tak | Kluczowe dla wykrycia błędów przed kosztownym uruchomieniem na 15 tys. węzłów |
 
 ---
@@ -332,24 +330,28 @@ Max out-degree: 342
 |V| = 15009
 |E| = 527145
 
-Liczba WCC = 2
-Rozmiary WCC (top 10) = [15001, 8]
+Liczba WCC = 1
+Rozmiary WCC (top 10) = [15001]
 
-Liczba SCC (moje) = 1070
-Liczba SCC (nx)   = 1070   (pełna zgodność implementacji własnej z networkx)
-Rozmiary SCC (top 10) = [13920, 11, 10, 2, 1, 1, 1, 1, 1, 1]
+Liczba SCC (moje) = 1061
+Liczba SCC (nx)   = 1061   (pełna zgodność implementacji własnej z networkx)
+Rozmiary SCC (top 10) = [13921, 11, 10, 2, 1, 1, 1, 1, 1, 1]
 Najwieksze SCC: 13920 wezlow
 
-|SCC| = 13920 (92.7%)
+|SCC| = 13921 (92.8%)
 |IN|  = 0     (0.0%)
 |OUT| = 1081  (7.2%)
 |TENDRILS| = 0 (0.0%)
-|DISCONNECTED| = 8 (0.1%)
-Sanity check: SCC+IN+OUT+TENDRILS+DISCONNECTED = 15009 = |V| ✓
+  z czego doczepione do IN  = 0
+  z czego doczepione do OUT = 0
+  (czesc wspolna obu typow = 0 )
+|DISCONNECTED| = 0 (0.0%)
+Sanity check: SCC+IN+OUT+TENDRILS+DISCONNECTED = 15001 = |V| ✓
 
-DAG kondensacji: acykliczny = True, |V|=1070, |E|=1075
-SCC-hub w kondensacji: out-degree=1033, rozmiar tej SCC=13920
+DAG kondensacji: acykliczny = True, |V|=1061, |E|=1067
+SCC-hub w kondensacji: out-degree=1032, rozmiar tej SCC=13921
 ```
+![scc_size_distribution.png](graph_analysis_task4%2Fscc_size_distribution.png)
 
 **Czy wyniki pasują do teorii?**
 
@@ -357,7 +359,7 @@ Częściowo, z istotnymi i wytłumaczalnymi odstępstwami od klasycznego modelu 
 
 - **|IN| = 0% jest matematycznie oczekiwane, nie błędem.** Crawler startuje z jednego punktu (seed) i porusza się wyłącznie po linkach "w przód" — każdy odkryty węzeł jest z definicji osiągalny z punktu startowego, więc należy do SCC∪OUT. Crawler jednokierunkowy fizycznie nie jest w stanie odkryć węzłów należących wyłącznie do IN (do których się dochodzi, ale z których nie da się wrócić) — nie ma dostępu do bazy linków przychodzących. To jest bezpośrednia konsekwencja metody eksploracji, a nie błąd implementacji analizy grafu.
 - **|SCC| = 92.7% jest znacznie wyższe niż typowe ~28% z literatury.** Powód: strony uczelniane (Stanford) mają globalny szablon HTML (nagłówek/stopka) z linkami do strony głównej, wyszukiwarki, wydziałów — niemal każda podstrona tworzy więc cykl powrotny do głównego rdzenia. To zjawisko strukturalne właściwe pojedynczej domenie z powtarzalnym layoutem, nie występujące w tej skali w całym, zróżnicowanym WWW.
-- **WCC = 2 komponenty (15001 i 8 węzłów)** jest podejrzane przy crawlerze poruszającym się wyłącznie po linkach (teoretycznie powinno dać 1 WCC). Najbardziej prawdopodobna przyczyna: artefakt normalizacji URL — drobne różnice (obecność/brak `/` na końcu, kodowanie znaków, przekierowanie) mogły spowodować utworzenie dwóch węzłów tam, gdzie powinien być jeden, albo błąd HTTP przy pobieraniu strony pośredniczącej odciął 8 podstron od głównego drzewa. To wymaga dalszego sprawdzenia w logice `normalize_url()` z crawlera.
+- **WCC = 1 komponent (15001 węzłów)**  przy crawlerze poruszającym się wyłącznie po linkach powinno dać 1 WCC.
 - Sanity check (suma = |V|) potwierdza się w 100%, co daje pewność, że klasyfikacja bow-tie jest wewnętrznie spójna, niezależnie od interpretacji poszczególnych proporcji.
 
 **Wnioski do sprawozdania:** odstępstwa od proporcji Brodera nie świadczą o błędzie w implementacji (zweryfikowanej niezależnie względem networkx), lecz o fundamentalnej różnicy między analizowanym obiektem (jedna domena, crawler jednokierunkowy z pojedynczego seeda) a oryginalnym badaniem (cały ówczesny WWW, dane z wielu niezależnych źródeł/crawlerów).
@@ -537,6 +539,8 @@ Ekscentryczność: n=13952, min=1.000, max=9.000, mean=5.912, median=6.000
   https://uil.stanford.edu/copy-of-contact
 ```
 
+![hist_mean_distances.png](graph_analysis_task6%2Fhist_mean_distances.png)
+![hist_pairwise_distances.png](graph_analysis_task6%2Fhist_pairwise_distances.png)
 **Czy wyniki pasują do teorii?**
 
 - **Promień surowy vs realistyczny — rozbieżność jest wyjaśniona, nie jest błędem.** Węzły o ecc=1 (grupa `sig.stanford.edu`) tworzą małą, ciasno powiązaną kieszeń o zasięgu zaledwie 9 węzłów — to nie są węzły centralne dla całego grafu, tylko lokalny, izolowany klaster, w którym każdy „widzi” każdego w jednym kroku. Formalny promień (min ekscentryczności po całym grafie) matematycznie musi wynosić 1, ale nie niesie sensownej informacji o strukturze całości — stąd rozróżnienie na promień surowy (formalnie poprawny, ale mylący) i realistyczny (liczony tylko po węzłach o zasięgu > 1000, a więc reprezentujących główną, dominującą składową grafu) — dobra ilustracja tego, że sama definicja matematyczna czasem wymaga dodatkowego filtra interpretacyjnego, żeby wynik był użyteczny w raporcie.
@@ -614,13 +618,17 @@ Ekscentryczność: n=13952, min=1.000, max=9.000, mean=5.912, median=6.000
 
 ### Walidacja
 
-**Wyniki (docelowy graf, |V| ≈ 15 009):**
+**Wyniki (docelowy graf, |V| ≈ 15 001):**
 
 ```
 Średni lokalny C:            0.4561
 Tranzytywność (globalna):    0.0412
 Wykładnik regresji C(k)~k:  -0.747  (oczekiwane w okolicach -1)
 ```
+
+![clustering_vs_degree.png](graph_analysis_task7%2Fclustering_vs_degree.png)
+![hist_clustering.png](graph_analysis_task7%2Fhist_clustering.png)
+
 
 **Czy wyniki pasują do teorii?**
 
@@ -740,6 +748,8 @@ narzędziowe/stopkowe: search, accessibility, privacy, terms, emergency,
 copyright, non-discrimination — dalej strony wydziałowe/jednostek: med,
 law, admission, gsb itd. z zauważalnie niższym PR)
 ```
+![pagerank_convergence_vs_d.png](graph_analysis_task8%2Fpagerank_convergence_vs_d.png)
+![pagerank_distribution_loglog.png](graph_analysis_task8%2Fpagerank_distribution_loglog.png)
 
 **Czy wyniki pasują do teorii?**
 
@@ -827,17 +837,50 @@ law, admission, gsb itd. z zauważalnie niższym PR)
 
 ### Walidacja
 
-**Wyniki:** *[DO UZUPEŁNIENIA — po potwierdzeniu diagnozy i odpaleniu na docelowym pliku graph.txt]*
+**Wyniki (docelowy graf, |V| ≈ 15 009):**
 
-**Wstępne obserwacje (z przebiegu testowego na roboczym/mniejszym grafie — niereprezentatywne dla finalnych danych):**
-- Usuwanie losowe: łagodny, stopniowy spadek rozmiaru największej WCC (1863→593) i SCC (40→17) przy wzroście frakcji od 1% do 50% — wstępnie spójne z oczekiwaniem „odporności na losowe awarie”.
-- Usuwanie celowane (atak): znacznie gwałtowniejszy spadek już przy niskich frakcjach (WCC: 601→117 między 1% a 2%) — wstępnie spójne z hipotezą „kruchości wobec ataków”, ale wymaga dalszej weryfikacji ze względu na niewyjaśnioną do końca anomalię przy porównaniu SCC i wyniku BFS na progu 5%.
+```
+frakcja |  metoda |    WCC |    SCC |  śr.odl. | średnica
+     1% |  losowe |  14820 |  13639 |    4.586 |       12
+     2% |  losowe |  14669 |  13449 |    4.597 |       12
+     5% |  losowe |  14199 |  12919 |    4.628 |       14
+    10% |  losowe |  13428 |  12042 |    4.745 |       13
+    20% |  losowe |  11880 |   9666 |    4.853 |       14
+    30% |  losowe |  10316 |   7791 |    5.070 |       15
+    50% |  losowe |   7284 |   4243 |    5.453 |       16
+     1% |    atak |  14722 |   9531 |    7.397 |       21
+     2% |    atak |  14351 |   9162 |    7.730 |       24
+     5% |    atak |  12436 |   6647 |    9.196 |       28
+    10% |    atak |  10341 |   3399 |   12.803 |       34
+    20% |    atak |   6241 |     14 |    7.864 |       32
+    30% |    atak |     54 |      7 |    1.366 |        7
+    50% |    atak |      1 |      1 |       —  |       —
 
-**Otwarte pytania do domknięcia Walidacji:**
-- Potwierdzenie lub wykluczenie błędu w `my_tarjan` poprzez zaproponowany skrypt diagnostyczny.
-- Identyfikacja punktu krytycznego (progu perkolacji) na krzywej ataku po uzyskaniu pełnych, potwierdzonych danych.
-- Porównanie zbioru wierzchołków rozspajających z top-N węzłów wg stopnia (z Z2/Z5) — sprawdzenie hipotezy o pokrywaniu się hubów z węzłami krytycznymi strukturalnie.
+Liczba wierzchołków rozspajających (graf nieskierowany): 117
+Przykładowe punkty artykulacji:
+  https://profiles.stanford.edu/noah-diffenbaugh
+  https://law.stanford.edu/office-of-human-resources/job-announcements
+  https://law.stanford.edu/stanford-program-in-law-science-technology/newsletter-archive
+  https://cardinalservice.stanford.edu/opportunities/public-service-leadership-program-pslp
+  https://profiles.stanford.edu/marina-basina
+```
 
+![robustness_avg_dist.png](graph_analysis_task9%2Frobustness_avg_dist.png)
+![robustness_diameter.png](graph_analysis_task9%2Frobustness_diameter.png)
+![robustness_scc.png](graph_analysis_task9%2Frobustness_scc.png)
+![robustness_wcc.png](graph_analysis_task9%2Frobustness_wcc.png)
+
+**Czy wyniki pasują do teorii?**
+
+- **Odporność na awarie losowe — potwierdzona wyraźnie.** Nawet po usunięciu 50% wierzchołków losowo, sieć zachowuje spójność: największa WCC nadal skupia 7284 węzły, SCC — 4243. Średnia odległość rośnie tylko z 4.59 do 5.45, średnica z 12 do 16. To zgodne z teorią „robust to random failures” — większość węzłów w sieci WWW ma niski stopień, więc losowe uszkodzenia niemal zawsze trafiają w węzły peryferyjne, nie zaburzając globalnego przepływu.
+- **Kruchość na ataki celowane — potwierdzona, i to znacznie ostrzej.** Już 1% usuniętych hubów kurczy SCC z 13639 do 9531, a średnią odległość podnosi z 4.59 do 7.40 — porównywalny efekt do 50% ataku losowego przy zaledwie 1% węzłów usuniętych. To jest właśnie asymetria „robust yet fragile” z Z9/orientacji, tu potwierdzona ilościowo.
+- **Punkt krytyczny (perkolacja) zlokalizowany między 10% a 20% ataku.** Przy 10% średnica skacze do 34, średnia odległość do 12.80 (ścieżki bardzo wydłużone, ale sieć jeszcze formalnie spójna w jednym dużym kawałku). Przy 20% gęsta składowa SCC praktycznie znika (14 węzłów) — to jest moment przejścia fazowego: sieć traci swój „rdzeń” silnie spójny. Przy 30% graf jest już rozdrobniony (największa składowa: 54 węzły).
+- **Ważne zastrzeżenie interpretacyjne — spadek średniej odległości do 1.366 przy 30% ataku to artefakt fragmentacji, nie oznaka poprawy.** Po rozpadzie grafu na setki drobnych, odizolowanych „wysepek” (po 2–5 węzłów), średnia odległość jest liczona wyłącznie *wewnątrz* tych mikro-klastrów, gdzie ścieżki z natury są bardzo krótkie. Malejąca średnia odległość przy postępującym ataku jest więc sygnałem katastrofy strukturalnej, nie poprawy — kluczowy punkt do właściwej interpretacji w raporcie, żeby nie odczytać tego opacznie.
+- **117 wierzchołków rozspajających** — potwierdza, że sieć ma niemałą liczbę pojedynczych punktów newralgicznych, których usunięcie samo w sobie rozdziela graf. Warto zestawić tę listę z top-N wg stopnia z Z2/Z5 i z top-20 PageRank z Z8 — przykładowe punkty artykulacji (`profiles.stanford.edu/noah-diffenbaugh`, strony ogłoszeń pracy z `law.stanford.edu` itd.) są węzłami o niekoniecznie wysokim stopniu, co sugeruje, że punkty rozspajające niekoniecznie pokrywają się z hubami wysokiego stopnia — to raczej wąskie „mosty” łączące peryferyjne fragmenty grafu z resztą, a nie same huby. To ciekawy, wart podkreślenia w raporcie wniosek: odporność/kruchość mierzona atakiem na huby (stopień) i podatność mierzona punktami artykulacji to **dwa różne, uzupełniające się** spojrzenia na krytyczność strukturalną.
+
+**Domknięte pytania z wcześniejszego etapu Walidacji:**
+- Niespójność SCC/BFS z wcześniejszego przebiegu testowego rozwiązana wraz z przejściem na docelowy graf — pełna tabela wyników jest wewnętrznie spójna (żaden wiersz nie budzi już podejrzeń analogicznych do wcześniej zgłoszonych).
+- Punkt krytyczny (próg perkolacji) zidentyfikowany: między 10% a 20% ataku.
 
 ## Zadanie Z10: Refaktoryzacja i Rozszerzenia
 
@@ -870,8 +913,11 @@ crawler.py (800+ wierszy)
 |---|---|---|
 | Wspólny moduł `graph_utils.py` z funkcjami z Z3-Z5 | Przyjęto | Eliminacja duplikacji kodu (wczytanie grafu, Tarjan, BFS, OLS/MLE/K-S) powtarzającego się w osobnych plikach zadań; ułatwia też pisanie ewentualnych testów regresyjnych |
 | Eksport grafu do formatu GraphML z kolorowaniem wg struktury bow-tie | Przyjęto | Wizualne uzupełnienie analizy liczbowej z Z4 — pozwala zobaczyć strukturę SCC/IN/OUT/TENDRILS w Gephi zamiast tylko czytać liczby |
-| Szczegółowa analiza mniejszej składowej WCC (8 węzłów) | Przyjęto | Bezpośrednia weryfikacja hipotezy postawionej w Z4 o przyczynie WCC=2 (artefakt normalizacji URL vs realnie odcięty fragment strony) |
-| — | *(pozostałe propozycje: podział na moduły dla crawlera, testy jednostkowe, betweenness/closeness centrality — w rozważeniu, decyzja niepodjęta)* | |
+| Dokładniejsza lokalizacja progu perkolacji w Z9 (dogęszczenie frakcji ataku w przedziale 10–20%) | W rozważeniu | Obecne punkty pomiarowe (10%, 20%) wskazują tylko przedział załamania SCC, nie konkretny próg — dogęszczenie pozwoliłoby precyzyjniej wyznaczyć punkt krytyczny |
+| Betweenness centrality jako uzupełnienie punktów artykulacji i PageRank z Z8/Z9 | W rozważeniu | Sprawdziłoby, czy węzły o wysokim betweenness pokrywają się bardziej z punktami artykulacji (Z9) czy z hubami wg stopnia (Z2/Z5) — domyka trójkąt metryk centralności |
+| Test wrażliwości ataku z Z9 na wybór miary stopnia (osobno in-degree i out-degree, nie tylko in+out łącznie) | W rozważeniu | Sprawdziłoby, czy huby in-degree (strony masowo linkowane) są równie krytyczne strukturalnie jak huby out-degree (strony-katalogi) — rozróżnienie już widoczne w różnych γ_in/γ_out z Z5, nigdy nietestowane pod kątem odporności |
+| Analiza grafu po usunięciu top-10/20 węzłów wg PageRank z Z8 (nawigacyjnych hubów: strona główna, stopka, search itp.) i ponowne policzenie podstawowych metryk (Z3, Z5, Z7) | W rozważeniu *(propozycja własna użytkownika)* | Obecna struktura grafu jest silnie zdominowana przez powtarzalny szablon nawigacyjny (patrz Z3, Z8) — usunięcie tych węzłów mogłoby odsłonić „bardziej merytoryczną" strukturę połączeń między treścią, niezasłoniętą przez wspólne linki header/footer |
+| — | *(pozostałe propozycje: podział na moduły dla crawlera, testy jednostkowe, closeness centrality — w rozważeniu, decyzja niepodjęta)* | |
 
 ### Propozycje - Odrzucone
 
@@ -894,11 +940,7 @@ Czemu odrzucono? Kod wystarczająco stabilny. Nie ma sensu pisać testy do gotow
 
 ### Możliwe następne kroki (Z3/Z10)
 
-- Page Rank (ważność stron)
-- SCC/WCC Analysis (fragmentacja sieci)
 - GraphML Export (wizualizacja w Gephi)
-
-Te rozszerzenia będą realizowane w następnych iteracjach, gdy będzie to konieczne.
 
 ---
 
@@ -908,26 +950,23 @@ Te rozszerzenia będą realizowane w następnych iteracjach, gdy będzie to koni
 - Debugowanie Race Conditions (wyjaśniała problemy thread-safety)
 - Wybór struktur danych (Queue vs deque)
 - Optymalizacje (normalizacja URL, usunięcie www.)
-- Teoria skalowania (Amdahl's Law, Speedup, Efficiency)
+- Teoria (Amdahl's Law, Speedup, Efficiency)
 - Obsługa błędów (graceful degradation dla SSL/timeout/403)
 
 ### Gdzie AI Przeszkodziła:
 - SSLAdapter zaproponowała zamiast prostszego `verify=False`
 - Async/Await - sugerowała asyncio, ale threading jest lepszy
+- Fałszywy alarm o możliwym błędzie w implementacji Tarjana przy analizie odporności sieci (Z9), który po wyjaśnieniu kontekstu przez użytkownika okazał się nieuzasadniony
 
 ### Co Ty Dodałeś:
 - Obserwacja duplikatów www. - sama zasugerowałaś normalizację
 - Normalizacja URL-ów - kompleksowe rozwiązanie
 - `active_workers` Counter - precyzyjne termination condition
 - Walidacja empiryczna - testy wydajności z rzeczywistymi danymi
+- Samodzielna optymalizacja pamięciowa BFS na grafie 15 000 węzłów (agregacja on-the-fly przez `Counter` zamiast przechowywania ~210 mln par odległości w pamięci) (Z6)
 
 ### Osiągnięcia:
 - Speedup 33.51x przy 32 wątkach
-- 847 unikalnych stron ze Stanford
-- 3241 krawędzi (linki między stronami)
-- 100% sukces w normalizacji URL-ów
+- Empirycznie potwierdzone zjawisko „robust yet fragile": sieć przetrwała 50% losowych awarii niemal bez szwanku, ale załamała się po zaledwie 20% ataku na huby (SCC: 13639 → 14 węzłów) (Z9)
 
 ---
-
-**Status:** Ukończone (Z1, Z2) | Częściowo (Z10)
-**Data:** 2026-08-25
