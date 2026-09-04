@@ -164,7 +164,7 @@ Threads    Time (s)    Pages   Throughput    Speedup    Efficiency
 32         145.80      1000    6.97          33.51      104.7%
 ```
 
-![performance_analysis.png](graph_analysis_task2%2Fperformance_analysis.png)
+![performance_analysis.png](graph_analysis_task2/performance_analysis.png)
 
 **Interpretacja:**
 - Speedup 33.51x dla 32 wątków = 33 razy szybciej niż 1 wątek
@@ -246,7 +246,7 @@ Max z in-degree: 13805
 Max z out-degree: 342
 ```
 
-![alt text](degree_histograms.png)
+![degree_histograms.png](graph_analysis_task3/degree_histograms.png)
 
 **Czy wyniki pasują do teorii?**
 - Gęstość rzędu 0.0023 jest typowa dla grafów WWW - sieć hiperłączy jest z natury bardzo rzadka (żadna strona nie linkuje do znacznej części pozostałych).
@@ -351,7 +351,7 @@ Sanity check: SCC+IN+OUT+TENDRILS+DISCONNECTED = 15001 = |V| ✓
 DAG kondensacji: acykliczny = True, |V|=1061, |E|=1067
 SCC-hub w kondensacji: out-degree=1032, rozmiar tej SCC=13921
 ```
-![scc_size_distribution.png](graph_analysis_task4%2Fscc_size_distribution.png)
+![scc_size_distribution.png](graph_analysis_task4/scc_size_distribution.png)
 
 **Czy wyniki pasują do teorii?**
 
@@ -539,8 +539,8 @@ Ekscentryczność: n=13952, min=1.000, max=9.000, mean=5.912, median=6.000
   https://uil.stanford.edu/copy-of-contact
 ```
 
-![hist_mean_distances.png](graph_analysis_task6%2Fhist_mean_distances.png)
-![hist_pairwise_distances.png](graph_analysis_task6%2Fhist_pairwise_distances.png)
+![hist_mean_distances.png](graph_analysis_task6/hist_mean_distances.png)
+![hist_pairwise_distances.png](graph_analysis_task6/hist_pairwise_distances.png)
 **Czy wyniki pasują do teorii?**
 
 - **Promień surowy vs realistyczny — rozbieżność jest wyjaśniona, nie jest błędem.** Węzły o ecc=1 (grupa `sig.stanford.edu`) tworzą małą, ciasno powiązaną kieszeń o zasięgu zaledwie 9 węzłów — to nie są węzły centralne dla całego grafu, tylko lokalny, izolowany klaster, w którym każdy „widzi” każdego w jednym kroku. Formalny promień (min ekscentryczności po całym grafie) matematycznie musi wynosić 1, ale nie niesie sensownej informacji o strukturze całości — stąd rozróżnienie na promień surowy (formalnie poprawny, ale mylący) i realistyczny (liczony tylko po węzłach o zasięgu > 1000, a więc reprezentujących główną, dominującą składową grafu) — dobra ilustracja tego, że sama definicja matematyczna czasem wymaga dodatkowego filtra interpretacyjnego, żeby wynik był użyteczny w raporcie.
@@ -626,8 +626,8 @@ Tranzytywność (globalna):    0.0412
 Wykładnik regresji C(k)~k:  -0.747  (oczekiwane w okolicach -1)
 ```
 
-![clustering_vs_degree.png](graph_analysis_task7%2Fclustering_vs_degree.png)
-![hist_clustering.png](graph_analysis_task7%2Fhist_clustering.png)
+![clustering_vs_degree.png](graph_analysis_task7/clustering_vs_degree.png)
+![hist_clustering.png](graph_analysis_task7/hist_clustering.png)
 
 
 **Czy wyniki pasują do teorii?**
@@ -748,8 +748,8 @@ narzędziowe/stopkowe: search, accessibility, privacy, terms, emergency,
 copyright, non-discrimination — dalej strony wydziałowe/jednostek: med,
 law, admission, gsb itd. z zauważalnie niższym PR)
 ```
-![pagerank_convergence_vs_d.png](graph_analysis_task8%2Fpagerank_convergence_vs_d.png)
-![pagerank_distribution_loglog.png](graph_analysis_task8%2Fpagerank_distribution_loglog.png)
+![pagerank_convergence_vs_d.png](graph_analysis_task8/pagerank_convergence_vs_d.png)
+![pagerank_distribution_loglog.png](graph_analysis_task8/pagerank_distribution_loglog.png)
 
 **Czy wyniki pasują do teorii?**
 
@@ -865,10 +865,10 @@ Przykładowe punkty artykulacji:
   https://profiles.stanford.edu/marina-basina
 ```
 
-![robustness_avg_dist.png](graph_analysis_task9%2Frobustness_avg_dist.png)
-![robustness_diameter.png](graph_analysis_task9%2Frobustness_diameter.png)
-![robustness_scc.png](graph_analysis_task9%2Frobustness_scc.png)
-![robustness_wcc.png](graph_analysis_task9%2Frobustness_wcc.png)
+![robustness_avg_dist.png](graph_analysis_task9/robustness_avg_dist.png)
+![robustness_diameter.png](graph_analysis_task9/robustness_diameter.png)
+![robustness_scc.png](graph_analysis_task9/robustness_scc.png)
+![robustness_wcc.png](graph_analysis_task9/robustness_wcc.png)
 
 **Czy wyniki pasują do teorii?**
 
